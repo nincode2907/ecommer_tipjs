@@ -1,9 +1,9 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const { mongo : {userName, pass, cluster} } = require('../configs/config.app');
 
-const connectionString = 'mongodb+srv://mongosv29:12345678x@cluster0.2e3y9hj.mongodb.net/?retryWrites=true&w=majority'
-
+const connectionString = `mongodb+srv://${userName}:${pass}@${cluster}.2e3y9hj.mongodb.net/?retryWrites=true&w=majority`
 
 class Database {
     constructor() {
