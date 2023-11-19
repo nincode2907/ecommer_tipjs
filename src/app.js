@@ -11,13 +11,18 @@ app.use(helmet())
 app.use(compression())
 
 // init database
+const instanceMongoDB  = require('./dbs/init.mongodb');
+const { countConnect, overloadedConnect }  = require('./helpers/check.connection');
+
+// overloadedConnect();
 
 // init routes
 app.get('/', (req, res, next) => {
     res.status(200).json({
         message: 'Hello World!', 
-        metadata: 'Kim Ngoc'.repeat(300)
     });
 })
+
+// handle functions
 
 module.exports = app;
