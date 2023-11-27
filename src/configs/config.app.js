@@ -6,6 +6,7 @@ const dev = {
         userName : process.env.MONGODB_USER_NAME || 'mongosv29',
         pass : process.env.MONGODB_PASSWORD,
         cluster : process.env.MONGODB_CLUSTER_NAME || 'cluster0',
+        databaseName : process.env.MONGODB_DATABASE_NAME || 'tips_js',
     }
 }
 
@@ -17,6 +18,7 @@ const product = {
         userName : process.env.MONGODB_USER_NAME || 'mongosv29',
         pass : process.env.MONGODB_PASSWORD,
         cluster : process.env.MONGODB_CLUSTER_NAME || 'cluster0',
+        databaseName : process.env.MONGODB_DATABASE_NAME || 'tips_js',
     }
 }
 

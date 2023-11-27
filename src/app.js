@@ -10,6 +10,8 @@ const app = express();
 app.use(morgan('dev'))
 app.use(helmet())
 app.use(compression())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // init database
 const instanceMongoDB  = require('./dbs/init.mongodb');
@@ -18,11 +20,7 @@ const { countConnect, overloadedConnect }  = require('./helpers/check.connection
 // overloadedConnect();
 
 // init routes
-app.get('/', (req, res, next) => {
-    res.status(200).json({
-        message: 'Hello World!', 
-    });
-})
+app.use('', require('./routes'));
 
 // handle functions
 
