@@ -33,9 +33,9 @@ class AccessService {
 
             if(shop) {
                 const {privateKey, publicKey} = crypto.generateKeyPairSync('rsa', {
-                    modulusLength: 4096,
+                    modulusLength: 2048,
                     publicKeyEncoding: {
-                        type: 'spki',
+                        type:'spki',
                         format: 'pem'
                     },
                     privateKeyEncoding: {
@@ -74,8 +74,8 @@ class AccessService {
                     message: 'Sign up successfully!',
                     metadata: {
                         shop: getInforObject(["_id", "name", "email"], shop),
-                        accessToken,
-                        refreshToken
+                        accessToken: tokens.accessToken,
+                        refreshToken: tokens.refreshToken,
                     }
                 }
             }
@@ -87,7 +87,7 @@ class AccessService {
 
         } catch (error) {
             return {
-                code: 'error_signup',
+                code: 'error_signup5',
                 message: error.message
             }
         }

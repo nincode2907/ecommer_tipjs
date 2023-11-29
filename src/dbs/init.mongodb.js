@@ -1,9 +1,9 @@
 'use strict';
 
 const mongoose = require('mongoose');
-const { mongo : {userName, pass, cluster, dbName} } = require('../configs/config.app');
+const { mongo : {userName, pass, cluster, databaseName} } = require('../configs/config.app');
 
-const connectionString = `mongodb+srv://${userName}:${pass}@${cluster}.2e3y9hj.mongodb.net/${dbName}?retryWrites=true&w=majority`
+const connectionString = `mongodb+srv://${userName}:${pass}@${cluster}.igrf69t.mongodb.net/${databaseName}?retryWrites=true&w=majority`
 
 class Database {
     constructor() {
@@ -21,6 +21,7 @@ class Database {
         })
         .catch(err => {
             console.log('Error connecting to MongoDB')
+            console.log(err.message);
         })
     }
 
