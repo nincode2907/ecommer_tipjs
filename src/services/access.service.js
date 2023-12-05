@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const KeyTokenService = require("./keyToken.service");
 const { createTokenPair }  = require('../auth/authUtils');
 const { getInforObject }  = require('../utils/index.util');
+const { ConflicError, UnauthorizedError } = require("../middlewares/error.response");
+const { OkayResponse } = require("../middlewares/success.response");
+
 
 const SHOP_ROLES = {
     SHOP: 'shop',
@@ -16,80 +19,98 @@ const SHOP_ROLES = {
 
 class AccessService {
     static signUp = async ({name, email, password}) => {
-        try {
+        const shopCheck = await shopModel.findOne({email}).lean();
+        if(shopCheck) throw new ConflicError('Shop email already registered!')
 
-            const shopCheck = await shopModel.findOne({email}).lean();
-            if(shopCheck) {
-                return {
-                    code: 'exits_email',
-                    message: 'Shop email already exists!'
-                }
-            }
+        const passwordHash = await bcrypt.hash(password, 10);
+        const shop = await shopModel.create(
+            {name, email, password: passwordHash, roles: [SHOP_ROLES.ADMIN]}
+        )
 
-            const passwordHash = await bcrypt.hash(password, 10);
-            const shop = await shopModel.create(
-                {name, email, password: passwordHash, roles: [SHOP_ROLES.ADMIN]}
-            )
+        if(shop) {
+            
 
-            if(shop) {
-                const {privateKey, publicKey} = crypto.generateKeyPairSync('rsa', {
-                    modulusLength: 2048,
-                    publicKeyEncoding: {
-                        type:'spki',
-                        format: 'pem'
-                    },
-                    privateKeyEncoding: {
-                        type: 'pkcs8',
-                        format: 'pem'
-                    }
-                });
+            // const publicKeyString = await KeyTokenService.createKeyToken({
+            //     shopId: shop._id,
+            //     publicKey
+            // });
 
-                const publicKeyString = await KeyTokenService.createKeyToken({
-                    shopId: shop._id,
-                    publicKey
-                });
+            // if(!publicKeyString) {
+            //     throw new UnauthorizedError('Can not create public token!');
+            // }
 
-                if(!publicKeyString) {
-                    return {
-                        code: 'error_signup',
-                        message: 'Error creating public key!'
-                    }
-                }
+            // const tokens = await createTokenPair(
+            //     {shopId: shop._id, email},
+            //     publicKeyString,
+            //     privateKey
+            // );
 
-                const tokens = await createTokenPair(
-                    {shopId: shop._id, email},
-                    publicKeyString,
-                    privateKey
-                );
-
-                if(!tokens) {
-                    return {
-                        code: 'error_signup',
-                        message: 'Error creating tokens Pair!'
-                    }
-                }
-
-                return {
-                    code:'success_signup',
-                    message: 'Sign up successfully!',
-                    metadata: {
-                        shop: getInforObject(["_id", "name", "email"], shop),
-                        accessToken: tokens.accessToken,
-                        refreshToken: tokens.refreshToken,
-                    }
-                }
-            }
+            // if(!tokens) {
+            //     throw new UnauthorizedError('Can not create tokens pair!');
+            // }
 
             return {
-                code: 'error_signup',
-                message: 'Error creating shop!'
+                message: 'Sign up successfully!',
+                metadata: {
+                    shop: getInforObject(["_id", "name", "email"], shop),
+                }
             }
+        } else {
+            throw new UnauthorizedError('Can not create shop!');
+        }
+    }
 
-        } catch (error) {
-            return {
-                code: 'error_signup5',
-                message: error.message
+    static login = async ({ email, password, refreshToken = null }) => {
+
+        /*
+            1/ check email
+            2/ check password
+            3/ generate key
+            4/ create token pair
+            5/ return information
+        */
+
+        const shopCheck = await shopModel.findOne({ email }).lean();
+        if(!shopCheck) throw new UnauthorizedError('Shop email not exist');
+
+        const passwordCheck = await bcrypt.compare(password, shopCheck.password);
+        if(!passwordCheck) throw new UnauthorizedError('Password not match');
+
+        const {privateKey, publicKey} = crypto.generateKeyPairSync('rsa', {
+            modulusLength: 2048,
+            publicKeyEncoding: {
+                type:'spki',
+                format: 'pem'
+            },
+            privateKeyEncoding: {
+                type: 'pkcs8',
+                format: 'pem'
             }
+        });
+
+        const tokens = await createTokenPair(
+            {shopId: shopCheck._id, email},
+            publicKey.toString(),
+            privateKey.toString()
+        );
+
+        await KeyTokenService.createKeyToken({shopId: shopCheck._id, publicKey: publicKey.toString(), privateKey: privateKey.toString(), refreshToken: tokens.refreshToken});
+
+        return {
+            message: 'Login successfully!',
+            metadata: {
+                shop: getInforObject(["_id", "name", "email"], shopCheck),
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+            }
+        }
+
+    }
+
+    static logout = async ( keyStore ) => {
+        return {
+            message: 'Logout successfully',
+            metadata: await KeyTokenService.removeKey(keyStore._id)
         }
     }
 }

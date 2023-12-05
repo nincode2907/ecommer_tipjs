@@ -14,13 +14,28 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // init database
-const instanceMongoDB  = require('./dbs/init.mongodb');
-const { countConnect, overloadedConnect }  = require('./helpers/check.connection');
+require('./dbs/init.mongodb');
+// const { countConnect, overloadedConnect }  = require('./helpers/check.connection');
 
 // overloadedConnect();
 
 // init routes
 app.use('', require('./routes'));
+
+// handle error
+app.use((req, res, next) => {
+    const error = new Error('Not Found');
+    error.status = 404
+    next(error)
+})
+
+app.use((error, req, res, next) => {
+    res.status(error.status || 500).json({
+        code: 'error',
+        status: error.status,
+        message: error.message || 'Internal Server'
+    })
+})
 
 // handle functions
 
